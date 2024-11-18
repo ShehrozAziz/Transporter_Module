@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Title TextView -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Current Order"
+        android:gravity="center_horizontal"
+        android:fontFamily="@font/poppins_black"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Username, User Contact, Source and Destination Address -->
+    <TextView
+        android:id="@+id/tvUsername"
+        android:layout_width="wrap_content"
+        android:fontFamily="@font/poppins_medium"
+        android:layout_height="wrap_content"
+        android:text="Username: "
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/tvUserContact"
+        android:layout_width="wrap_content"
+        android:fontFamily="@font/poppins_medium"
+        android:textStyle="bold"
+
+        android:layout_height="wrap_content"
+        android:text="User Contact: "
+        android:layout_marginBottom="8dp" />
+    <!-- Fare and Distance -->
+    <TextView
+        android:id="@+id/tvFare"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Fare: "
+        android:textStyle="bold"
+        android:fontFamily="@font/poppins_medium"
+
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/tvDistance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Distance: "
+        android:textStyle="bold"
+        android:fontFamily="@font/poppins_medium"
+
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Source Address"
+        android:layout_gravity="center"
+        android:fontFamily="@font/poppins_black"
+        android:layout_marginBottom="8dp" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:id="@+id/tvSourceAddress"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_medium"
+            android:layout_weight="1"
+            android:textStyle="bold"
+            android:text="Source Address: " />
+
+        <ImageButton
+            android:id="@+id/btnSourceAddressMap"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:backgroundTint="@color/BG"
+            android:background="@drawable/ic_pin"
+            />
+    </LinearLayout>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Destination Address"
+        android:layout_gravity="center"
+        android:fontFamily="@font/poppins_black"
+        android:layout_marginBottom="16dp" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/tvDestinationAddress"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textStyle="bold"
+            android:fontFamily="@font/poppins_medium"
+
+            android:text="Destination Address: " />
+
+        <ImageButton
+            android:id="@+id/btnDestinationAddressMap"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:backgroundTint="@color/BG"
+            android:background="@drawable/ic_pin"
+            />
+    </LinearLayout>
+
+
+
+    <!-- Order Finished Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOrderFinished"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cornerRadius="8dp"
+        android:backgroundTint="@color/BG"
+        android:fontFamily="@font/poppins_medium"
+        android:textColor="@color/FG"
+        android:text="Order Finished" />
+</LinearLayout>

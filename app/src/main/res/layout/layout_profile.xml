@@ -60,18 +60,6 @@
                     android:textColor="@color/BG"
                     android:gravity="center"
                     />
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Email: something@something.com"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:id="@+id/tvEmail"
-                    android:fontFamily="@font/poppins_medium"
-                    android:textColor="@color/BG"
-                    android:gravity="center"
-                    android:layout_marginBottom="10dp"
-                    />
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

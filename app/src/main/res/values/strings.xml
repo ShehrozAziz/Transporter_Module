@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Transporter_Module</string>
+    <string name="server_IP">//192.168.1.10:5001/</string>
 </resources>
