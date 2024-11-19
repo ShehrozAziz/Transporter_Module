@@ -80,13 +80,17 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="10dp"
-
                     android:fontFamily="@font/poppins_medium"
                     android:gravity="center"
                     android:text="Orders"
                     android:textColor="@color/BG"
                     android:textStyle="bold"
                     android:textSize="25sp"/>
+                <EditText
+                    android:layout_width="1dp"
+                    android:layout_height="1dp"
+                    android:id="@+id/etHiddenEditText"
+                    />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
         <com.google.android.material.card.MaterialCardView
@@ -108,6 +112,7 @@
             <include
                 layout="@layout/layout_booked_order"
                 android:visibility="gone"
+                android:id="@+id/booked_order_layout"
                 />
 
             <TextView

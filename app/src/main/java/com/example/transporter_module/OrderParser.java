@@ -16,5 +16,15 @@ public class OrderParser {
         // Parse the JSON array
         return gson.fromJson(jsonData, orderListType);
     }
+
+    public static List<AssignedOrder> parseAssignedOrderData(String jsonData) {
+        Gson gson = new Gson();
+
+        // Specify the list type for deserialization
+        Type orderListType = new TypeToken<ArrayList<AssignedOrder>>() {}.getType();
+
+        // Parse the JSON array
+        return gson.fromJson(jsonData, orderListType);
+    }
 }
 

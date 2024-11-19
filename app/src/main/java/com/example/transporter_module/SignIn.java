@@ -11,6 +11,7 @@ import android.location.LocationManager;
 import android.nfc.Tag;
 import android.os.Bundle;
 import android.Manifest;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -39,127 +40,131 @@ public class SignIn extends AppCompatActivity {
     ImageView ivTransport_Clip;
     TextInputEditText etUsernameSignin,etPasswordSignin;
     private ApiService apiService;
-
     public Context context;
-
     private LocationManager locationManager;
     private LocationListener locationListener;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
-
     static public boolean locationfetched;
-
     static public Transporter transporter;
-
     static public boolean LoggedIn;
-
     static public double longitude;
     static public double latitude;
-
     static public String baseURL;
-
     ProgressDialog progressDialog;
-
     SharedPrefsManager manager;
+
+    static public AssignedOrder BookedOrder;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate( savedInstanceState);
-        setContentView(R.layout.activity_sign_in);
+        setContentView(R.layout.splash);
+        context = SignIn.this;
+
         baseURL = getString(R.string.server_IP);
-
-
         // Set status bar color
         getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.BG)); // Replace 'your_color' with the desired color
+        // Location Manager Initialization
+
+        new Handler().postDelayed(() -> {
+            manager = new SharedPrefsManager(context);
+            progressDialog = new ProgressDialog(context);
+            progressDialog.setMessage("Loading...");
+            progressDialog.setCancelable(false);  // Prevent canceling by tapping outside
+            progressDialog.setIndeterminate(true);  // Show indeterminate spinner
+            progressDialog.show();
+            locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+            locationListener = new LocationListener() {
+                @Override
+                public void onLocationChanged(@NonNull Location location) {
+                    if(!locationfetched)
+                    {
+                        Got();
+                        longitude = location.getLongitude();
+                        latitude = location.getLatitude();
+                        Toast.makeText( context,"Location Fetched",Toast.LENGTH_LONG ).show();
+                        locationfetched = true;
+                        progressDialog.dismiss();
+
+                        if(manager.getUsername() != null)
+                        {
+                            SignIn.transporter = manager.getTransporter();
+                            Intent intent = new Intent(SignIn.this,MainActivity.class);
+                            startActivity(intent);
+                            finish();
+                        }
+
+                    }
+                }
+
+                @Override
+                public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+                @Override
+                public void onProviderEnabled(@NonNull String provider) {}
+
+                @Override
+                public void onProviderDisabled(@NonNull String provider) {}
+            };
+            // Request Location Permissions
+            checkLocationPermissions();
+            }, 5000);
+
+
+
+    }
+    public void Got()
+    {
+        setContentView(R.layout.activity_sign_in);
         btnSignIn = findViewById(R.id.btnSignIn);
-        context = SignIn.this;
-        manager = new SharedPrefsManager(context);
-        progressDialog = new ProgressDialog(context);
-        progressDialog.setMessage("Loading...");
-        progressDialog.setCancelable(false);  // Prevent canceling by tapping outside
-        progressDialog.setIndeterminate(true);  // Show indeterminate spinner
-        progressDialog.show();
         etPasswordSignin = findViewById(R.id.etPasswordSignin);
         etUsernameSignin = findViewById(R.id.etUsernameSignin);
         ivTransport_Clip = findViewById(R.id.ivTransport_Clip);
         transporter = new Transporter();
-
-
         btnSignIn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                    SignInrequest(etUsernameSignin.getText().toString(), etPasswordSignin.getText().toString(), new LoginCallBack() {
-                        @Override
-                        public void onLoginResult(int result, LoginResponse loginResponse) {
-                            switch (result) {
-                                case 1:
-                                    // Successful login
-                                    transporter = loginResponse.getTransporter();
-                                    Log.d("Transporter", "Transporter Name: " + transporter.getName());
-                                    manager.clearTransporterData();
-                                    manager.saveTransporter(transporter,etUsernameSignin.getText().toString(),etPasswordSignin.getText().toString());
-                                    Log.d("Sign In", transporter.getId());
-                                    Intent intent = new Intent(SignIn.this,MainActivity.class);
-                                    startActivity(intent);
-                                    finish();
-
-                                    break;
-                                case -1:
-                                    // Login failed (incorrect credentials)
-                                    Toast.makeText(context, loginResponse.getMessage(), Toast.LENGTH_SHORT).show();
-                                    break;
-                                case -2:
-                                    // Response failure
-                                    Toast.makeText(context, "Login failed due to response error", Toast.LENGTH_SHORT).show();
-                                    break;
-                                case -3:
-                                    // Network error
-                                    Toast.makeText(context, "Network error", Toast.LENGTH_SHORT).show();
-                                    break;
-                                default:
-                                    // Unknown error
-                                    Toast.makeText(context, "Unknown error occurred", Toast.LENGTH_SHORT).show();
-                                    break;
-                            }
+                btnSignIn.setClickable(false);
+                SignInrequest(etUsernameSignin.getText().toString(), etPasswordSignin.getText().toString(), new LoginCallBack() {
+                    @Override
+                    public void onLoginResult(int result, LoginResponse loginResponse) {
+                        switch (result) {
+                            case 1:
+                                // Successful login
+                                transporter = loginResponse.getTransporter();
+                                Log.d("Transporter", "Transporter Name: " + transporter.getName());
+                                manager.clearTransporterData();
+                                manager.saveTransporter(transporter,etUsernameSignin.getText().toString(),etPasswordSignin.getText().toString());
+                                Log.d("Sign In", transporter.getId());
+                                btnSignIn.setClickable(true);
+                                Intent intent = new Intent(SignIn.this,MainActivity.class);
+                                startActivity(intent);
+                                finish();
+                                break;
+                            case -1:
+                                // Login failed (incorrect credentials)
+                                Toast.makeText(context, loginResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                                btnSignIn.setClickable(true);
+                                break;
+                            case -2:
+                                // Response failure
+                                Toast.makeText(context, "Login Failed: Server is Down", Toast.LENGTH_SHORT).show();
+                                btnSignIn.setClickable(true);
+                                break;
+                            case -3:
+                                // Network error
+                                Toast.makeText(context, "Network Error", Toast.LENGTH_SHORT).show();
+                                btnSignIn.setClickable(true);
+                                break;
+                            default:
+                                // Unknown error
+                                Toast.makeText(context, "Unknown Error Occurred", Toast.LENGTH_SHORT).show();
+                                btnSignIn.setClickable(true);
+                                break;
                         }
-                    });
+                    }
+                });
             }
         });
-
-        // Location Manager Initialization
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        locationListener = new LocationListener() {
-            @Override
-            public void onLocationChanged(@NonNull Location location) {
-                if(!locationfetched)
-                {
-                    longitude = location.getLongitude();
-                    latitude = location.getLatitude();
-                    Toast.makeText( context,"Location Fetched",Toast.LENGTH_LONG ).show();
-                    Log.d( "100",String.valueOf(latitude) + " " + String.valueOf(longitude));
-                    locationfetched = true;
-                    progressDialog.dismiss();
-                    if(manager.getUsername() != null)
-                    {
-                        SignIn.transporter = manager.getTransporter();
-                        Intent intent = new Intent(SignIn.this,MainActivity.class);
-                        startActivity(intent);
-                        finish();
-                    }
-
-                }
-            }
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {}
-
-            @Override
-            public void onProviderEnabled(@NonNull String provider) {}
-
-            @Override
-            public void onProviderDisabled(@NonNull String provider) {}
-        };
-        // Request Location Permissions
-        checkLocationPermissions();
-
 
         final View rootView = findViewById(android.R.id.content).getRootView();
         rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -179,40 +184,17 @@ public class SignIn extends AppCompatActivity {
                 }
             }
         });
-    }
-   private void sendDataToServer(LoginData loginData) {
-        Call<LoginResponse> call = apiService.sendData( loginData );
 
-        call.enqueue(new Callback<LoginResponse>() {
-            @Override
-            public void onResponse(@NonNull Call<LoginResponse> call, @NonNull Response<LoginResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    // Handle the response from the Node.js server
-                    Log.d("Server Response", "Message: " + response.body().getMessage());
-                    Toast.makeText(context, "Response" +response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                } else {
-                    Log.e("Server Response", "Request failed");
-                    Toast.makeText(context, "Request Failed", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<LoginResponse> call, Throwable t) {
-                Toast.makeText(context, "Response Failed", Toast.LENGTH_SHORT).show();
-            }
-        });
     }
+
     public void SignInrequest(String phone, String password, LoginCallBack callback)
     {
-        final int[] returnvariable = {0};
-        String baseAddress = getString(R.string.server_IP);
-
         // Create the ClientData object
         LoginData clientData = new LoginData(phone, password);
 
         // Retrofit setupw
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http:" + baseURL)
+                .baseUrl(baseURL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 

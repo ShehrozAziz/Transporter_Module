@@ -7,7 +7,8 @@ public class AcceptOrderData {
     {
         this.orderID = orderID;
         this.transporterID = transporterID;
-
     }
+
+
 }
 

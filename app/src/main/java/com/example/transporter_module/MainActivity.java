@@ -17,8 +17,11 @@ import android.content.Intent;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.security.identity.PersonalizationData;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -26,6 +29,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -57,6 +62,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MainActivity extends AppCompatActivity {
     ImageButton btnMore,btnLogout;
     RecyclerView rvPendings;
+
+    public static EditText etHiddenEditText;
     public static BadgeDrawable Pending;
     private WebSocketClient webSocketClient;
     private static final String TAG = "MainActivity";
@@ -66,24 +73,60 @@ public class MainActivity extends AppCompatActivity {
     PendingOrdersAdapter adapter;
     ProgressDialog progressDialog;
 
+    public View BookedOrderLayout;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.BG)); // Replace 'your_color' with the desired color
         context = MainActivity.this;
+
+        etHiddenEditText = findViewById( R.id.etHiddenEditText);
+        etHiddenEditText.setVisibility(View.INVISIBLE);
         progressDialog = new ProgressDialog(context);
         progressDialog.setMessage("Loading...");
         progressDialog.setCancelable(false);  // Prevent canceling by tapping outside
         progressDialog.setIndeterminate(true);  // Show indeterminate spinner
         progressDialog.show();
-        getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.BG)); // Replace 'your_color' with the desired color
-        setContentView(R.layout.activity_main);
         btnMore = findViewById(R.id.btnMore);
         btnLogout = findViewById( R.id.btnLogout );
         rvPendings = findViewById(R.id.rvPendings);
+        BookedOrderLayout = findViewById( R.id.booked_order_layout );
         rvPendings.setLayoutManager(new LinearLayoutManager(MainActivity.this));
         adapter = new PendingOrdersAdapter(pendingOrders,MainActivity.this);
         rvPendings.setAdapter(adapter);
-        btnLogout.setOnClickListener( new View.OnClickListener() {
+        etHiddenEditText.addTextChangedListener( new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if(s.toString().equals("No"))
+                {
+                    progressDialog.dismiss();
+                    progressDialog.show();
+                    fetchBookedOrder();
+                }
+                else if(s.toString().equals("Yes") || s.toString().equals("Dont"))
+                {
+                    progressDialog.dismiss();
+                }
+                else if(s.toString().equals("Pending"))
+                {
+                    progressDialog.show();
+                }
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        } );
+        btnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 TextView messageTextView = new TextView(context);
@@ -91,23 +134,18 @@ public class MainActivity extends AppCompatActivity {
                 messageTextView.setTextSize(18); // Set the desired text size
                 messageTextView.setPadding(50, 50, 50, 20); // Set padding for left and right margins
                 messageTextView.setGravity( Gravity.CENTER); // Center the text
-
                 // Set custom font
                 messageTextView.setTypeface( ResourcesCompat.getFont(v.getContext(), R.font.poppins_medium));  // Apply Poppins font
-
-
                 // Create the AlertDialog
                 AlertDialog.Builder builder = new AlertDialog.Builder(context);
                 builder.setView(messageTextView);
                 builder.setCancelable(true); // Allow canceling the dialog by tapping outside or pressing back
-
                 // Set Positive Button
                 builder.setPositiveButton("Yes", (dialog, which) -> {
                     // Handle logout action here
                     SharedPrefsManager manager = new SharedPrefsManager( context );
                     manager.clearTransporterData();
                     SignIn.locationfetched=false;
-
                     dialog.dismiss();
                     Intent intent = new Intent(MainActivity.this,SignIn.class);
                     startActivity( intent );
@@ -198,12 +236,30 @@ public class MainActivity extends AppCompatActivity {
         TextView tvName = dialogView.findViewById(R.id.tvName);
         tvName.setText(SignIn.transporter.getName());
         TextView tvCarLocation = dialogView.findViewById(R.id.tvCarLocation);
-        tvCarLocation.setText("Pick Up, Lahore");
+        tvCarLocation.setText("Pick-Up Ravi, Lahore");
         TextView tvPhone = dialogView.findViewById(R.id.tvPhone);
         tvPhone.setText(SignIn.transporter.getPhone());
         TextInputEditText etPhone = dialogView.findViewById(R.id.etPhone);
         etPhone.setText(SignIn.transporter.getPhone());
         TextInputEditText etPassword = dialogView.findViewById(R.id.etPassword);
+        MaterialButton btnChangePassword = dialogView.findViewById( R.id.btnUpdatePassword );
+        MaterialButton btnChangePhone = dialogView.findViewById(R.id.btnUpdatePhone);
+        btnChangePassword.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Inflate the layout for the confirmation dialog
+                ChangeDetails( etPassword.getText().toString(), true);
+
+            }
+        });
+        btnChangePhone.setOnClickListener( new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ChangeDetails( etPhone.getText().toString(), false);
+            }
+        });
+
+
 
         // Show the dialog
         alertDialog.show();
@@ -240,14 +296,17 @@ public class MainActivity extends AppCompatActivity {
     }
     private void connectWebSocket() {
         try {
-            String baseAddress = getString(R.string.server_IP);
+            String baseAddress = getString(R.string.websocket_IP);
 
-            URI uri = new URI("ws:" + baseAddress); // Replace with your server's WebSocket URL
+            URI uri = new URI(baseAddress); // Replace with your server's WebSocket URL
             webSocketClient = new WebSocketClient(uri) {
                 @Override
                 public void onOpen(ServerHandshake handshakedata) {
                     Log.d(TAG, "WebSocket Opened");
                     runOnUiThread(() -> Toast.makeText(context, "Connected to Server", Toast.LENGTH_SHORT).show());
+                    String idToSend = SignIn.transporter.getId(); // Replace with your ID value
+                    webSocketClient.send(idToSend);
+                    Log.d(TAG, "ID sent to server: " + idToSend);
                 }
                 @Override
                 public void onMessage(String message) {
@@ -298,9 +357,29 @@ public class MainActivity extends AppCompatActivity {
                                 adapter.addOrder(orders.get(0));
                             });
                         }
+                        else if ("oneOrder".equals( eventType ))
+                        {
+                            String dataJson = jsonMessage.getJSONArray("data").toString();
+                            // Parse the order data
+                            List<AssignedOrder> orders = OrderParser.parseAssignedOrderData( dataJson );
+                            runOnUiThread( () ->
+                            {
+                                Log.d(TAG,orders.get(0).getOrderID());
+                                if(orders.size() == 1)
+                                {
+                                    SignIn.BookedOrder = orders.get(0);
+                                    rvPendings.setVisibility(View.INVISIBLE);
+                                    BookedOrderLayout.setVisibility(View.VISIBLE);
+                                    inflateBookedOrder( BookedOrderLayout,SignIn.BookedOrder);
+                                }
+                            });
+                        }
                     } catch (JSONException e) {
                         Log.e(TAG, "Error parsing JSON message: " + e.getMessage());
+
+
                     }
+                    progressDialog.dismiss();
                 }
                 @Override
                 public void onClose(int code, String reason, boolean remote) {
@@ -320,55 +399,318 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> Toast.makeText(context, "Error Connecting Server: " + e.getMessage(), Toast.LENGTH_SHORT).show());
         }
     }
-    public void SignInrequest(String phone, String password, LoginCallBack callback)
+    @SuppressLint("SetTextI18n")
+    public void inflateBookedOrder(View layout, AssignedOrder order)
     {
-        final int[] returnvariable = {0};
-        String baseAddress = getString(R.string.server_IP);
+        TextView username, userContact, fare, distance, source, destination;
+        MaterialButton btnComplete,btnOpenMap;
+        ImageButton sourcepin, destpin;
 
-        // Create the ClientData object
-        LoginData clientData = new LoginData(phone, password);
+        username = layout.findViewById( R.id.tvUsername2 );
+        username.setText( "Username: " + order.getName() );
+        userContact = layout.findViewById( R.id.tvUserContact2 );
+        userContact.setText( "Contact: " + order.getPhone());
+        fare = layout.findViewById( R.id.tvFare2 );
+        fare.setText( "Fare: " + String.valueOf(order.getFare() + " Rs.") );
+        source = layout.findViewById( R.id.tvSourceAddress2 );
+        source.setText(order.getSource());
+        destination = layout.findViewById( R.id.tvDestinationAddress2 );
+        destination.setText(order.getDestination());
+        btnComplete = layout.findViewById( R.id.btnOrderFinished2 );
+        btnComplete.setOnClickListener( new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TextView messageTextView = new TextView(context);
+                messageTextView.setText("Confirm that Order is Finished!");
+                messageTextView.setTextSize(18); // Set the desired text size
+                messageTextView.setPadding(50, 50, 50, 20); // Set padding for left and right margins
+                messageTextView.setGravity( Gravity.CENTER); // Center the text
+                // Set custom font
+                messageTextView.setTypeface( ResourcesCompat.getFont(v.getContext(), R.font.poppins_medium));  // Apply Poppins font
+                // Create the AlertDialog
+                AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                builder.setView(messageTextView);
+                builder.setCancelable(true); // Allow canceling the dialog by tapping outside or pressing back
 
-        // Retrofit setupw
+                // Set Positive Button
+                builder.setPositiveButton("Yes", (dialog, which) -> {
+                    progressDialog.show();
+                    // Handle logout action here
+                    FinishOrder(SignIn.BookedOrder.getOrderID());
+                    SignIn.BookedOrder = null;
+                    dialog.dismiss();
+
+                });
+                // Set Negative Button
+                builder.setNegativeButton("No", (dialog, which) -> dialog.dismiss());
+                // Create and show the AlertDialog
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+        } );
+        sourcepin = layout.findViewById(R.id.btnSourceAddressMap);
+        sourcepin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                    String sourceLat = String.valueOf(SignIn.latitude);
+                    String sourceLng = String.valueOf(SignIn.longitude);
+
+                    // Get the destination pin (latitude,longitude)
+                    String destinationPin = order.getSourcePin(); // Example: "31.481218950076983,74.3029832839966"
+
+                    // Split the destinationPin into latitude and longitude
+                    String[] destLatLng = destinationPin.split(",");
+                    if (destLatLng.length == 2) {
+                        String destinationLat = destLatLng[0];
+                        String destinationLng = destLatLng[1];
+
+                        // Create an Intent to show directions from the source to the destination
+                        String url = "https://www.google.com/maps/dir/?api=1&origin=" + sourceLat + "," + sourceLng +
+                                "&destination=" + destinationLat + "," + destinationLng + "&travelmode=driving";
+
+                        Intent mapIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        mapIntent.setPackage("com.google.android.apps.maps"); // Ensure it opens in Google Maps
+                        startActivity(mapIntent);
+                    }
+                }
+        });
+
+        destpin = layout.findViewById(R.id.btnDestinationAddressMap);
+        destpin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Get the destination pin (latitude,longitude)
+                // Get the source pin (latitude,longitude)
+                String sourcePin = order.getSourcePin(); // Example: "31.449043168427096,74.29970026016237"
+
+                // Split the sourcePin into latitude and longitude
+                String[] latLng = sourcePin.split(",");
+                if (latLng.length == 2) {
+                    String sourceLat = latLng[0];
+                    String sourceLng = latLng[1];
+
+                    // Get the destination pin (latitude,longitude)
+                    String destinationPin = order.getDestinationPin(); // Example: "31.481218950076983,74.3029832839966"
+
+                    // Split the destinationPin into latitude and longitude
+                    String[] destLatLng = destinationPin.split(",");
+                    if (destLatLng.length == 2) {
+                        String destinationLat = destLatLng[0];
+                        String destinationLng = destLatLng[1];
+
+                        // Create an Intent to show directions from the source to the destination
+                        String url = "https://www.google.com/maps/dir/?api=1&origin=" + sourceLat + "," + sourceLng +
+                                "&destination=" + destinationLat + "," + destinationLng + "&travelmode=driving";
+
+                        Intent mapIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        mapIntent.setPackage("com.google.android.apps.maps"); // Ensure it opens in Google Maps
+                        startActivity(mapIntent);
+                    }
+                }
+            }
+        });
+    }
+    public void FinishOrder(String orderID) {
+        // Initialize Retrofit
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http:" + baseAddress)
+                .baseUrl(SignIn.baseURL)
                 .addConverterFactory( GsonConverterFactory.create())
                 .build();
 
         ApiService apiService = retrofit.create(ApiService.class);
 
-        // Call the login method
-        Call<LoginResponse> call = apiService.login(clientData);
-
-        call.enqueue(new Callback<LoginResponse>() {
+        // Create the request body
+        AcceptOrderData request = new AcceptOrderData(SignIn.BookedOrder.getOrderID(), SignIn.BookedOrder.getTransporterID());
+        //String request = SignIn.BookedOrder.getOrderID();
+        // Make the API call
+        apiService.markOrderCompleted(request).enqueue(new Callback<ApiResponse>() {
             @Override
-            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
-                if (response.isSuccessful()) {
-                    LoginResponse serverResponse = response.body();
-                    if (serverResponse != null) {
-                        // Handle success
-                        if (serverResponse.isSuccess()) {
-                            // Successful login, do something (e.g., navigate to another activity)
-                            Toast.makeText(MainActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
-                        } else {
-                            // Login failed
-                            Log.e("API Response", "Login failed: " + serverResponse.getMessage());
-                            callback.onLoginResult( -1,response.body() );
-                            //Toast.makeText(SignIn.this, serverResponse.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
+            public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ApiResponse apiResponse = response.body();
+                    if (apiResponse.isSuccess()) {
+                        Log.d("API Response", "Order Completed successfully: " + apiResponse.getMessage());
+                        Toast.makeText( context, "Order Booked", Toast.LENGTH_SHORT ).show();
+                        rvPendings.setVisibility( View.VISIBLE );
+                        BookedOrderLayout.setVisibility( View.INVISIBLE);
+
+                        progressDialog.dismiss();
+                    } else {
+                        Log.e("API Response", "Failed to Complete order: " + apiResponse.getMessage());
+                        Toast.makeText( context, "Unexpected Issue", Toast.LENGTH_SHORT ).show();
+
+                        progressDialog.dismiss();
                     }
-                }
-                else {
-                    Log.e("API Error", "Response failed: " + response.message());
-                    //Toast.makeText(SignIn.this, "Login failed", Toast.LENGTH_SHORT).show();
-                    callback.onLoginResult( -2,response.body() );
+                } else {
+                    Log.e("API Error", "Request failed with status: " + response.code());
+                    Toast.makeText( context, "Network Issue", Toast.LENGTH_SHORT ).show();
+                    progressDialog.dismiss();
                 }
             }
 
             @Override
-            public void onFailure(Call<LoginResponse> call, Throwable t) {
-                Log.e("API Error", "Request failed: " + t.getMessage());
-                Toast.makeText(MainActivity.this, "Network error", Toast.LENGTH_SHORT).show();
-                callback.onLoginResult( -3,null);
+            public void onFailure(Call<ApiResponse> call, Throwable t) {
+                Log.e("API Error", "Network error: " + t.getMessage());
+                Toast.makeText( context, "Netword Issue", Toast.LENGTH_SHORT ).show();
+                progressDialog.dismiss();
+            }
+        });
+    }
+    public void ChangeDetailsApi(String oldpassword, String newdata, boolean password) {
+
+        // Initialize Retrofit
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(SignIn.baseURL)
+                .addConverterFactory( GsonConverterFactory.create())
+                .build();
+
+        ApiService apiService = retrofit.create(ApiService.class);
+        ApidataChangeDetails request = new ApidataChangeDetails(oldpassword,newdata,SignIn.transporter.getId());
+        if(password)
+        {
+            apiService.updatePassword(request).enqueue(new Callback<ApiResponse>() {
+                @Override
+                public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        ApiResponse apiResponse = response.body();
+                        if (apiResponse.isSuccess()) {
+                            Log.d("API Response", "Order Completed successfully: " + apiResponse.getMessage());
+                            Toast.makeText( context, "Password Updated Successfully", Toast.LENGTH_SHORT ).show();
+                        } else {
+                            Log.e("API Response", "Failed to Complete order: " + apiResponse.getMessage());
+                            Toast.makeText( context, "Failed: Wrong Current Password", Toast.LENGTH_SHORT ).show();
+                        }
+                    } else {
+
+                        Toast.makeText( context, "Network Error", Toast.LENGTH_SHORT ).show();
+                        Log.e("API Error", "Request failed with status: " + response.code());
+                    }
+                }
+                @Override
+                public void onFailure(Call<ApiResponse> call, Throwable t) {
+
+                    Toast.makeText( context, "Network Error", Toast.LENGTH_SHORT ).show();
+                    Log.e("API Error", "Network error: " + t.getMessage());
+                }
+            });
+        }
+        else
+        {
+            apiService.updatePhone(request).enqueue(new Callback<ApiResponse>() {
+                @Override
+                public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        ApiResponse apiResponse = response.body();
+                        if (apiResponse.isSuccess()) {
+                            Toast.makeText( context, "Phone No. Updated Successfully", Toast.LENGTH_SHORT ).show();
+                            Log.d("API Response", "Order Completed successfully: " + apiResponse.getMessage());
+
+                        } else {
+                            Toast.makeText( context, "Failed: Wrong Current Password", Toast.LENGTH_SHORT ).show();
+                            Log.e("API Response", "Failed to Complete order: " + apiResponse.getMessage());
+                        }
+                    } else {
+                        Toast.makeText( context, "Network Error", Toast.LENGTH_SHORT ).show();
+                        Log.e("API Error", "Request failed with status: " + response.code());
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<ApiResponse> call, Throwable t) {
+
+                    Toast.makeText( context, "Network Error", Toast.LENGTH_SHORT ).show();
+                    Log.e("API Error", "Network error: " + t.getMessage());
+                }
+            });
+
+        }
+
+    }
+    public void ChangeDetails(String newdata, Boolean password)
+    {
+        LayoutInflater inflater = LayoutInflater.from(context);
+        View dialogView2 = inflater.inflate(R.layout.confirmation_password, null);
+
+        // Create an AlertDialog for the confirmation
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setView(dialogView2);
+
+        // Add custom behavior if required for views in the confirmation_password.xml
+        AlertDialog confirmationDialog = builder.create();
+
+
+        // Show the dialog
+        confirmationDialog.show();
+
+        MaterialButton btnConfirm, btnClose;
+        TextInputEditText etPasswordConfirm;
+        etPasswordConfirm = confirmationDialog.findViewById( R.id.etConfirmPassword);
+        btnConfirm = confirmationDialog.findViewById( R.id.btnConfirmPasswordConfirm );
+        btnConfirm.setOnClickListener( new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(password)
+                {
+                    ChangeDetailsApi( etPasswordConfirm.getText().toString().trim(),newdata,true);
+                }
+                else
+                {
+                    ChangeDetailsApi( etPasswordConfirm.getText().toString().trim(),newdata,false);
+                }
+            }
+        } );
+        btnClose = confirmationDialog.findViewById( R.id.btnConfirmPasswordClose );
+        btnClose.setOnClickListener( new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                confirmationDialog.dismiss();
+            }
+        } );
+
+    }
+    public void fetchBookedOrder()
+    {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(SignIn.baseURL)
+                .addConverterFactory( GsonConverterFactory.create())
+                .build();
+
+        ApiService apiService = retrofit.create(ApiService.class);
+
+        // Create the request body
+        AcceptOrderData request = new AcceptOrderData(" ", SignIn.transporter.getId());
+        apiService.getAssignedOrder(request).enqueue(new Callback<ApiAssignOrderResponse>() {
+            @Override
+            public void onResponse(Call<ApiAssignOrderResponse> call, Response<ApiAssignOrderResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ApiAssignOrderResponse apiResponse = response.body();
+                    if (apiResponse.isSuccess()) {
+                        List<AssignedOrder> orders = apiResponse.getOrders();
+                        Log.d("API Response", "Orders fetched successfully: " + orders.size());
+                        SignIn.BookedOrder = orders.get(0);
+                        rvPendings.setVisibility( View.INVISIBLE);
+                        BookedOrderLayout.setVisibility( View.VISIBLE);
+                        inflateBookedOrder(BookedOrderLayout,SignIn.BookedOrder);
+
+                        progressDialog.dismiss();
+                        // Process and update UI with orders
+                    } else {
+                        Log.e("API Response", "Error: " + apiResponse.getMessage());
+
+                        progressDialog.dismiss();
+                    }
+                } else {
+                    Log.e("API Error", "Failed with status: " + response.code());
+
+                    progressDialog.dismiss();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiAssignOrderResponse> call, Throwable t) {
+                Log.e("API Error", "Network error: " + t.getMessage());
+
+                progressDialog.dismiss();
             }
         });
     }
@@ -380,6 +722,37 @@ public class MainActivity extends AppCompatActivity {
             webSocketClient.close();
         }
     }
+    public class ApidataChangeDetails {
+        String oldpassword;
+        String newdata;
+        String transporterID;
+        ApidataChangeDetails(String oldpassword,String newdata,String transporterID)
+        {
+            this.oldpassword = oldpassword;
+            this.newdata = newdata;
+            this.transporterID = transporterID;
+        }
+
+
+    }
+    public class ApiAssignOrderResponse {
+        private boolean success;
+        private String message; // Optional, only for failure
+        private List<AssignedOrder> orders; // List of assigned orders
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public List<AssignedOrder> getOrders() {
+            return orders;
+        }
+    }
+
 
 
 

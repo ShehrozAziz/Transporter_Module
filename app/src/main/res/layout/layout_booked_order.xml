@@ -20,7 +20,7 @@
 
     <!-- Username, User Contact, Source and Destination Address -->
     <TextView
-        android:id="@+id/tvUsername"
+        android:id="@+id/tvUsername2"
         android:layout_width="wrap_content"
         android:fontFamily="@font/poppins_medium"
         android:layout_height="wrap_content"
@@ -29,7 +29,7 @@
         android:layout_marginBottom="8dp" />
 
     <TextView
-        android:id="@+id/tvUserContact"
+        android:id="@+id/tvUserContact2"
         android:layout_width="wrap_content"
         android:fontFamily="@font/poppins_medium"
         android:textStyle="bold"
@@ -39,24 +39,13 @@
         android:layout_marginBottom="8dp" />
     <!-- Fare and Distance -->
     <TextView
-        android:id="@+id/tvFare"
+        android:id="@+id/tvFare2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Fare: "
         android:textStyle="bold"
         android:fontFamily="@font/poppins_medium"
-
         android:layout_marginBottom="8dp" />
-
-    <TextView
-        android:id="@+id/tvDistance"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Distance: "
-        android:textStyle="bold"
-        android:fontFamily="@font/poppins_medium"
-
-        android:layout_marginBottom="16dp" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -73,7 +62,7 @@
         android:layout_marginBottom="16dp">
 
         <TextView
-            android:id="@+id/tvSourceAddress"
+            android:id="@+id/tvSourceAddress2"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:fontFamily="@font/poppins_medium"
@@ -101,10 +90,10 @@
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp">
+        android:layout_marginBottom="18dp">
 
         <TextView
-            android:id="@+id/tvDestinationAddress"
+            android:id="@+id/tvDestinationAddress2"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -121,17 +110,31 @@
             android:background="@drawable/ic_pin"
             />
     </LinearLayout>
-
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textStyle="bold|italic"
+        android:textAlignment="center"
+        android:fontFamily="@font/poppins_medium"
+        android:layout_marginBottom="10dp"
+        android:text="Tap the Google pin to open the map from your location to source, then source to destination." />
 
 
     <!-- Order Finished Button -->
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnOrderFinished"
+        android:id="@+id/btnOrderFinished2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cornerRadius="8dp"
         android:backgroundTint="@color/BG"
         android:fontFamily="@font/poppins_medium"
         android:textColor="@color/FG"
-        android:text="Order Finished" />
+        android:text="Finish Order"
+        android:layout_marginBottom="10dp"/>
+
+
+
+
+
+
 </LinearLayout>

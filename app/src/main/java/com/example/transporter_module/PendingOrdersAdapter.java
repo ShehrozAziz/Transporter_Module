@@ -151,7 +151,16 @@ public class PendingOrdersAdapter extends RecyclerView.Adapter<PendingOrdersAdap
                         SharedPrefsManager manager = new SharedPrefsManager(context);
                         Transporter transporter = manager.getTransporter();
                         Log.d("Adapter", transporter.getId());
-                        assignOrder( order.getorderID(),SignIn.transporter.getId());
+                        if(orders.contains(order))
+                        {
+                            MainActivity.etHiddenEditText.setText("Pending");
+                            assignOrder( order.getorderID(),SignIn.transporter.getId());
+                            swipedPosition = -1;
+                        }
+                        else
+                        {
+                            Toast.makeText( context, "Order Deleted or Not Found", Toast.LENGTH_SHORT ).show();
+                        }
 
                         dialog.dismiss();
                     }
@@ -273,9 +282,7 @@ public class PendingOrdersAdapter extends RecyclerView.Adapter<PendingOrdersAdap
 
 
     @Override
-    public int getItemCount() {
-        return orders.size();
-    }
+    public int getItemCount() {return orders.size();}
 
     // Resizing logic for opening and closing the parent layout
     private void resizeParent(View itemView, boolean expand) {
@@ -335,7 +342,7 @@ public class PendingOrdersAdapter extends RecyclerView.Adapter<PendingOrdersAdap
 
         // Initialize Retrofit
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http:" + SignIn.baseURL)
+                .baseUrl(/*"http:" + */SignIn.baseURL)
                 .addConverterFactory( GsonConverterFactory.create())
                 .build();
 
@@ -352,11 +359,14 @@ public class PendingOrdersAdapter extends RecyclerView.Adapter<PendingOrdersAdap
                     ApiResponse apiResponse = response.body();
                     if (apiResponse.isSuccess()) {
                         Log.d("API Response", "Order assigned successfully: " + apiResponse.getMessage());
+                        MainActivity.etHiddenEditText.setText("No");
                     } else {
                         Log.e("API Response", "Failed to assign order: " + apiResponse.getMessage());
+                        MainActivity.etHiddenEditText.setText("Yes");
                     }
                 } else {
                     Log.e("API Error", "Request failed with status: " + response.code());
+                    MainActivity.etHiddenEditText.setText("Dont");
                 }
             }
 
