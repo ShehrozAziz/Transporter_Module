@@ -126,7 +126,7 @@ public class PendingOrdersAdapter extends RecyclerView.Adapter<PendingOrdersAdap
                 // Create TextViews for the details
                 TextView sourceAddressTextView = createStyledTextView(v, "Source Address: " + order.getSourceAddress());
                 TextView destinationAddressTextView = createStyledTextView(v, "Destination Address: " + order.getDestinationAddress());
-                TextView fareTextView = createStyledTextView(v, "Fare: " + String.valueOf(order.getFare()));
+                TextView fareTextView = createStyledTextView(v, "Fare: " + String.valueOf(order.getFare()) + " Rs.");
                 TextView distanceTextView = createStyledTextView(v, "Total Ride Distance: " + String.valueOf(order.getTotalDistance()));
                 TextView usernameTextView = createStyledTextView(v, "Username: " + order.getName());
                 TextView phoneTextView = createStyledTextView(v, "Phone: " + order.getPhone());
@@ -195,7 +195,6 @@ public class PendingOrdersAdapter extends RecyclerView.Adapter<PendingOrdersAdap
         );
         params.setMargins(20, 20, 20, 20);  // Add margin to the left, top, right, and bottom
         textView.setLayoutParams(params);
-
         textView.setGravity( Gravity.START);  // Align the text to the left
         textView.setTextColor(v.getResources().getColor(android.R.color.black)); // Set text color
 

@@ -530,7 +530,7 @@ public class MainActivity extends AppCompatActivity {
                     ApiResponse apiResponse = response.body();
                     if (apiResponse.isSuccess()) {
                         Log.d("API Response", "Order Completed successfully: " + apiResponse.getMessage());
-                        Toast.makeText( context, "Order Booked", Toast.LENGTH_SHORT ).show();
+                        Toast.makeText( context, "Order Completed Successfully", Toast.LENGTH_SHORT ).show();
                         rvPendings.setVisibility( View.VISIBLE );
                         BookedOrderLayout.setVisibility( View.INVISIBLE);
 

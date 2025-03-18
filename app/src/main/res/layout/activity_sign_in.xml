@@ -40,6 +40,7 @@
             app:boxBackgroundMode="outline"
             app:boxStrokeColor="@color/BG"
             app:boxStrokeWidth="2dp"
+            app:endIconMode="custom"
             android:hint="Enter Username"
             app:hintTextColor="@color/BG"
             >
@@ -63,6 +64,7 @@
             app:boxBackgroundMode="outline"
             app:boxStrokeColor="@color/BG"
             app:boxStrokeWidth="2dp"
+            app:endIconMode="password_toggle"
             android:hint="Enter Password"
             app:hintTextColor="@color/BG"
             >
